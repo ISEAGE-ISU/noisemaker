@@ -1,3 +1,0 @@
-# sys=localname ip=path
-sys=localhost host=127.0.0.1
-sys=accounting host=accounting.iseage.local

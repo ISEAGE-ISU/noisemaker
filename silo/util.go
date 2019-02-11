@@ -18,3 +18,7 @@ func sysfatal(format string, args ...interface{}) {
 	os.Exit(2)
 }
 
+// Stringify a given object
+func stringify(x interface{}) string {
+	return fmt.Sprintf("%v", x)
+}
