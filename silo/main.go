@@ -6,6 +6,7 @@ import (
 	"io"
 	"strings"
 	"log"
+sc	"strconv"
 )
 
 
@@ -19,6 +20,8 @@ var (
 
 // Handles incoming connections
 func handler(conn net.Conn) {
+	connected := true
+
 	defer conn.Close()
 	
 	// Handles basic writing to interface
@@ -27,27 +30,63 @@ func handler(conn net.Conn) {
 		if err != nil {
 			log.Println("Failed to write, disconnecting: ", err)
 			conn.Close()
+			connected = false
+		}
+	}
+	
+	// Handles basic reading to interface
+	read := func(buf []byte) {
+		_, err := conn.Read(buf)
+
+		if err != nil {
+			if err == io.EOF {
+				// Connection ended
+				conn.Close()
+				connected = false
+			} else {
+				log.Println("Unexpected disconnect: ", err)
+				conn.Close()
+				connected = false
+			}
 		}
 	}
 	
 	invalid := func() {
 		write("err: invalid arguments")
 	}
+	
+	
+	if silo.auth {
+		// Verify auth
+		buf := make([]byte, width)
+	
+		write("Enter PIN: ")
+		read(buf)
+		
+		pinstr := strings.Fields(string(buf))[0]
+		
+		pin, err := sc.Atoi(pinstr)
+		
+		if err != nil {
+			write("Access denied.")
+			conn.Close()
+			connected = false
+		}
+		
+		if !(pin == 0 || pin < 0 || pin > 999999 || pin == silo.pin) {
+			write("Access denied.")
+			conn.Close()
+			connected = false
+		} else {
+			write("Access granted.")
+		}
 
-	for {
+	}
+
+	for connected {
 		buf := make([]byte, width)
 
-		_, err := conn.Read(buf)
-
-		if err != nil {
-			if err == io.EOF {
-				// Connection ended
-				break
-			} else {
-				log.Println("Unexpected disconnect: ", err)
-				break
-			}
-		}
+		read(buf)
 
 		argv := strings.Fields(string(buf))
 		
@@ -60,9 +99,13 @@ func handler(conn net.Conn) {
 			write("err: no command specified")
 		}
 
+		// Commands master switch
 		switch argv[0] {
+		
+		// Lights
 		case "lights":
 			log.Println(argv, len(argv))
+
 			switch len(argv) {
 			case 1:
 				write(string(silo.Lights()))
@@ -76,6 +119,27 @@ func handler(conn net.Conn) {
 				invalid()
 			}
 		
+		
+		// Contents
+		case "contents":
+		
+		
+		// Supply
+		case "supply":
+		
+		
+		// Heat
+		case "heat":
+		
+		
+		// Humidity
+		case "humidity":
+		
+		
+		// Status
+		case "status":
+		
+		
 		// Manual disconnect commands, for convenience
 		case "quit":
 			fallthrough
@@ -84,6 +148,7 @@ func handler(conn net.Conn) {
 			conn.Close()
 			break
 
+		// Command not found
 		default:
 			write("err: unknown command")
 		}
@@ -96,6 +161,10 @@ func main() {
 	flag.StringVar(&port, "p", ":1337", "Port to listen on")
 	flag.Uint64Var(&width, "w", 1024, "Max width of communications")
 	flag.Parse()
+	
+	// Init silo
+	silo.pin = 1234
+	silo.auth = true
 
 	// Start listener
 	ln, err := net.Listen("tcp", port)
