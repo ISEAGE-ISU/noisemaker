@@ -67,7 +67,7 @@ func (t *Tractor) DoCmd(connected *bool, write func(string), read func([]byte), 
 			goto nocmd
 		}
 
-		if busy {
+		if busy && argv[0] != "status" {
 			write("err: busy -- " + t.status)
 			goto nocmd
 		}

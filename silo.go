@@ -64,7 +64,7 @@ func (s *Silo) DoCmd(connected *bool, write func(string), read func([]byte), inv
 			goto nocmd
 		}
 		
-		if busy {
+		if busy && argv[0] != "status" {
 			write("err: busy -- " + s.status)
 			goto nocmd
 		}
