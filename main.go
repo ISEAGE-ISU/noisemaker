@@ -144,7 +144,7 @@ func main() {
 // Style: ANSI Shadow
 var banner string = `
 TRAC CORP INDUSTRIES UNIFIED OPERATING SYSTEM
-COPYRIGHT 2075-2077 DON JEERE INDUSTRIES
+COPYRIGHT 2075-2077 TRAC CORP INDUSTRIES
 ───────────────────────────────────────────────────────────────────────────
 DIAL SUCCEEDED
 ***************************************************************************
