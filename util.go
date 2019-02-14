@@ -22,3 +22,12 @@ func sysfatal(format string, args ...interface{}) {
 func stringify(x interface{}) string {
 	return fmt.Sprintf("%v", x)
 }
+
+// Bool to string
+func b2s(b bool) string {
+	if b {
+		return "on"
+	}
+
+	return "off"
+}
