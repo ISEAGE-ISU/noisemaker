@@ -98,6 +98,11 @@ func handler(conn net.Conn) {
 		if len(argv) < 1 {
 			write("err: no command specified")
 		}
+		
+		if !silo.power && argv[0] != "power" {
+			write("err: powered off")
+			goto nocmd
+		}
 
 		// Commands master switch
 		switch argv[0] {
@@ -121,18 +126,39 @@ func handler(conn net.Conn) {
 		case "contents":
 			write(silo.cont)
 		
+		// Power
+		case "power":
+			switch len(argv) {
+			case 1:
+				write(string(silo.Power()))
+			case 2:
+				if argv[1] == "on" {
+					silo.power = true
+				} else {
+					silo.power = false
+				}
+			default:
+				invalid()
+			}
+		
 		// Supply
 		case "supply":
 			switch len(argv) {
 			case 1:
 				write(sc.Itoa(silo.supply))
-			case 2:
+			case 3:
+				n, err := sc.Atoi(argv[2])
+
+				if err != nil {
+					invalid()
+				}
+
 				if argv[1] == "load" {
 					// TODO ­ more max/min logic
-					silo.supply += 10
+					silo.supply += n
 				} else {
-					// unload
-					silo.supply -= 10
+					// lower
+					silo.supply -= n
 				}
 			default:
 				invalid()
@@ -200,6 +226,7 @@ func handler(conn net.Conn) {
 		default:
 			write("err: unknown command")
 		}
+		nocmd:
 	}
 }
 
@@ -210,7 +237,7 @@ func main() {
 	flag.Parse()
 	
 	// Init silo
-	silo.status	= "off"
+	silo.status	= "idle"
 	silo.humid	= 30
 	silo.temp	= 20
 	silo.supply	= 0
@@ -229,4 +256,3 @@ func main() {
 		go handler(conn)
 	}
 }
-
