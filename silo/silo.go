@@ -4,9 +4,9 @@ package main
 type Silo struct {
 	lights	bool	// whether silo lights are on or not
 	status	string	// current action
-	humid	int		// current humidity mmHg
+	humid	int		// current humidity %
 	temp	int		// current temp °C
-	supply	int		// current supply levels
+	supply	int		// current supply levels bushels
 	cont	string	// current contents
 	pin		int		// current auth pin
 	auth	bool	// session authenticated y/n

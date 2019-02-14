@@ -104,8 +104,6 @@ func handler(conn net.Conn) {
 		
 		// Lights
 		case "lights":
-			log.Println(argv, len(argv))
-
 			switch len(argv) {
 			case 1:
 				write(string(silo.Lights()))
@@ -118,27 +116,77 @@ func handler(conn net.Conn) {
 			default:
 				invalid()
 			}
-		
-		
+
 		// Contents
 		case "contents":
-		
+			write(silo.cont)
 		
 		// Supply
 		case "supply":
-		
+			switch len(argv) {
+			case 1:
+				write(sc.Itoa(silo.supply))
+			case 2:
+				if argv[1] == "load" {
+					// TODO ­ more max/min logic
+					silo.supply += 10
+				} else {
+					// unload
+					silo.supply -= 10
+				}
+			default:
+				invalid()
+			}
 		
 		// Heat
 		case "heat":
-		
+			switch len(argv) {
+			case 1:
+				write(sc.Itoa(silo.temp))
+			case 3:
+				n, err := sc.Atoi(argv[2])
+
+				if err != nil {
+					invalid()
+				}
+
+				if argv[1] == "raise" {
+					// TODO ­ more max/min logic
+					silo.temp += n
+				} else {
+					// lower
+					silo.temp -= n
+				}
+			default:
+				invalid()
+			}
 		
 		// Humidity
 		case "humidity":
-		
+			switch len(argv) {
+			case 1:
+				write(sc.Itoa(silo.humid))
+			case 3:
+				n, err := sc.Atoi(argv[2])
+
+				if err != nil {
+					invalid()
+				}
+
+				if argv[1] == "raise" {
+					// TODO ­ more max/min logic
+					silo.humid += n
+				} else {
+					// lower
+					silo.humid -= n
+				}
+			default:
+				invalid()
+			}
 		
 		// Status
 		case "status":
-		
+			write(silo.status)
 		
 		// Manual disconnect commands, for convenience
 		case "quit":
@@ -152,7 +200,6 @@ func handler(conn net.Conn) {
 		default:
 			write("err: unknown command")
 		}
-		
 	}
 }
 
@@ -163,8 +210,13 @@ func main() {
 	flag.Parse()
 	
 	// Init silo
-	silo.pin = 1234
-	silo.auth = true
+	silo.status	= "off"
+	silo.humid	= 30
+	silo.temp	= 20
+	silo.supply	= 0
+	silo.cont	= "corn"
+	silo.pin	= 1234
+	silo.auth	= true
 
 	// Start listener
 	ln, err := net.Listen("tcp", port)
