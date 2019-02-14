@@ -67,6 +67,26 @@ func (t *Tractor) DoCmd(connected *bool, write func(string), read func([]byte), 
 			goto nocmd
 		}
 
+		if busy {
+			write("err: busy -- " + t.status)
+			goto nocmd
+		}
+
+		if t.fuel <= 0 && argv[0] != "fuel" {
+			write("err: no fuel")
+			goto nocmd
+		}
+
+		if t.oil <= 0 && argv[0] != "oil" {
+			write("err: no oil")
+			goto nocmd
+		}
+
+		if t.supply > 100 && argv[0] != "supply" {
+			write("err: overfull")
+			goto nocmd
+		}
+
 		// Commands master switch
 		switch argv[0] {
 		

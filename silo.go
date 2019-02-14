@@ -69,6 +69,11 @@ func (s *Silo) DoCmd(connected *bool, write func(string), read func([]byte), inv
 			goto nocmd
 		}
 
+		if s.supply > 1000 && argv[0] != "supply" {
+			write("err: overfull")
+			goto nocmd
+		}
+
 		// Commands master switch
 		switch argv[0] {
 		
