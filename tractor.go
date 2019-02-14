@@ -108,6 +108,7 @@ func (t *Tractor) DoCmd(connected *bool, write func(string), read func([]byte), 
 			case 2:
 				if argv[1] == "add" {
 					t.fuel += 100
+					spin(5, "refueling", "idle")
 				} else {
 					t.fuel = 0
 				}
@@ -137,9 +138,9 @@ func (t *Tractor) DoCmd(connected *bool, write func(string), read func([]byte), 
 					write(t.status)
 				case 2:
 					if argv[1] == "start" {
-						t.status = "harvesting"
+						spin(10, "harvesting", "idle")
 					} else {
-						t.status = "idle"
+						spin(10, "harvesting", "idle")
 					}
 				default:
 					invalid()
@@ -179,9 +180,11 @@ func (t *Tractor) DoCmd(connected *bool, write func(string), read func([]byte), 
 				if argv[1] == "load" {
 					// TODO ­ more max/min logic
 					t.supply += n
+					spin(10, "loading", "idle")
 				} else {
 					// lower
 					t.supply -= n
+					spin(10, "unloading", "idle")
 				}
 			default:
 				invalid()
