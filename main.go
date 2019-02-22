@@ -104,9 +104,9 @@ func handler(conn net.Conn) {
 	}
 
 	if mode == "silo" {
-		silo.DoCmd(&connected, write, read, invalid)
+		silo.DoCmd(conn, &connected, write, read, invalid)
 	} else if mode == "tractor" {
-		tractor.DoCmd(&connected, write, read, invalid)
+		tractor.DoCmd(conn, &connected, write, read, invalid)
 	}
 }
 

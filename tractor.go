@@ -2,6 +2,7 @@ package main
 
 import (
 	"strings"
+	"net"
 sc	"strconv"
 )
 
@@ -44,10 +45,13 @@ func NewTractor() (t Tractor) {
 	return
 }
 
-func (t *Tractor) DoCmd(connected *bool, write func(string), read func([]byte), invalid func()) {
+func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read func([]byte), invalid func()) {
+	ok := func() { write("ok.") }
 
 	for *connected {
 		buf := make([]byte, width)
+		
+		conn.Write([]byte("> "))
 
 		read(buf)
 
@@ -101,6 +105,7 @@ func (t *Tractor) DoCmd(connected *bool, write func(string), read func([]byte), 
 				} else {
 					t.lights = false
 				}
+				ok()
 			default:
 				invalid()
 			}
@@ -113,6 +118,7 @@ func (t *Tractor) DoCmd(connected *bool, write func(string), read func([]byte), 
 			case 2:
 				if argv[1] == "add" {
 					t.oil += 100
+					ok()
 				} else {
 					invalid()
 				}
@@ -128,9 +134,11 @@ func (t *Tractor) DoCmd(connected *bool, write func(string), read func([]byte), 
 			case 2:
 				if argv[1] == "add" {
 					t.fuel += 100
+					ok()
 					spin(5, "refueling", "idle")
 				} else {
 					t.fuel = 0
+					ok()
 				}
 			default:
 				invalid()
@@ -141,12 +149,14 @@ func (t *Tractor) DoCmd(connected *bool, write func(string), read func([]byte), 
 			switch len(argv) {
 			case 1:
 				write(sc.Itoa(t.tires))
+				ok()
 			case 2:
 				if argv[1] == "inflate" {
 					t.tires = 100
 				} else {
 					t.tires = 0
 				}
+				ok()
 			default:
 				invalid()
 			}
@@ -158,8 +168,10 @@ func (t *Tractor) DoCmd(connected *bool, write func(string), read func([]byte), 
 					write(t.status)
 				case 2:
 					if argv[1] == "start" {
+						ok()
 						spin(10, "harvesting", "idle")
 					} else {
+						ok()
 						spin(10, "harvesting", "idle")
 					}
 				default:
@@ -181,6 +193,7 @@ func (t *Tractor) DoCmd(connected *bool, write func(string), read func([]byte), 
 				} else {
 					t.power = false
 				}
+				ok()
 			default:
 				invalid()
 			}
@@ -200,10 +213,12 @@ func (t *Tractor) DoCmd(connected *bool, write func(string), read func([]byte), 
 				if argv[1] == "load" {
 					// TODO ­ more max/min logic
 					t.supply += n
+					ok()
 					spin(10, "loading", "idle")
 				} else {
 					// lower
 					t.supply -= n
+					ok()
 					spin(10, "unloading", "idle")
 				}
 			default:
@@ -229,6 +244,7 @@ func (t *Tractor) DoCmd(connected *bool, write func(string), read func([]byte), 
 					// lower
 					t.temp -= n
 				}
+				ok()
 			default:
 				invalid()
 			}
@@ -252,6 +268,7 @@ func (t *Tractor) DoCmd(connected *bool, write func(string), read func([]byte), 
 					// lower
 					t.humid -= n
 				}
+				ok()
 			default:
 				invalid()
 			}
@@ -264,7 +281,7 @@ func (t *Tractor) DoCmd(connected *bool, write func(string), read func([]byte), 
 		case "quit":
 			fallthrough
 		case "exit":
-			write("ok")
+			ok()
 			return
 			break
 

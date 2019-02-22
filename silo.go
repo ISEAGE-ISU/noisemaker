@@ -2,6 +2,7 @@ package main
 
 import (
 	"strings"
+	"net"
 sc	"strconv"
 )
 
@@ -42,9 +43,13 @@ func NewSilo() (s Silo) {
 	return
 }
 
-func (s *Silo) DoCmd(connected *bool, write func(string), read func([]byte), invalid func()) {
+func (s *Silo) DoCmd(conn net.Conn, connected *bool, write func(string), read func([]byte), invalid func()) {
+	ok := func() { write("ok.") }
+
 	for *connected {
 		buf := make([]byte, width)
+		
+		conn.Write([]byte("> "))
 
 		read(buf)
 
@@ -88,6 +93,7 @@ func (s *Silo) DoCmd(connected *bool, write func(string), read func([]byte), inv
 				} else {
 					s.lights = false
 				}
+				ok()
 			default:
 				invalid()
 			}
@@ -107,6 +113,7 @@ func (s *Silo) DoCmd(connected *bool, write func(string), read func([]byte), inv
 				} else {
 					s.power = false
 				}
+				ok()
 			default:
 				invalid()
 			}
@@ -126,10 +133,12 @@ func (s *Silo) DoCmd(connected *bool, write func(string), read func([]byte), inv
 				if argv[1] == "load" {
 					// TODO ­ more max/min logic
 					s.supply += n
+					ok()
 					go spin(10, "loading", "idle")
 				} else {
 					// lower
 					s.supply -= n
+					ok()
 					go spin(10, "unloading", "idle")
 				}
 			default:
@@ -155,6 +164,7 @@ func (s *Silo) DoCmd(connected *bool, write func(string), read func([]byte), inv
 					// lower
 					s.temp -= n
 				}
+				ok()
 			default:
 				invalid()
 			}
@@ -178,6 +188,7 @@ func (s *Silo) DoCmd(connected *bool, write func(string), read func([]byte), inv
 					// lower
 					s.humid -= n
 				}
+				ok()
 			default:
 				invalid()
 			}
@@ -190,7 +201,7 @@ func (s *Silo) DoCmd(connected *bool, write func(string), read func([]byte), inv
 		case "quit":
 			fallthrough
 		case "exit":
-			write("ok")
+			ok()
 			return
 			break
 
