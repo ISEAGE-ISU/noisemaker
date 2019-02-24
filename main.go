@@ -17,8 +17,8 @@ var (
 	width	uint64	// width to read from connection
 	silo		Silo		// our silo
 	tractor	Tractor	// our tractor
-	combine Combine // out combine
-	mode	string	// "silo" or "tractor"
+	combine Combine // our combine
+	mode	string	// "silo", "tractor", or "combine"
 	busy		bool	= false	// lock for busy signal
 	auth		bool		// auth mode y/n
 	pin		int		// pin
@@ -117,13 +117,13 @@ func handler(conn net.Conn) {
 func main() {
 	flag.StringVar(&port, "p", ":1337", "Port to listen on")
 	flag.Uint64Var(&width, "w", 1024, "Max width of communications")
-	flag.StringVar(&mode, "m", "silo", "Which mode to start in: tractor, silo")
+	flag.StringVar(&mode, "m", "combine", "Which mode to start in: tractor, silo, combine")
 	flag.IntVar(&pin, "c", 1234, "Pin for auth (if any)")
 	flag.BoolVar(&auth, "a", true, "Auth t/f")
 	flag.Parse()
 	
-	if mode != "silo" && mode != "tractor" {
-		log.Fatal("Error: mode must be one of tractor or silo.")
+	if mode != "silo" && mode != "tractor" && mode != "combine" {
+		log.Fatal("Error: mode must be one of tractor, silo, or combine.")
 	}
 
 	if mode == "silo" {
@@ -131,7 +131,8 @@ func main() {
 	} else if mode == "tractor" {
 		tractor = NewTractor()
 	} else if mode == "combine" {
-		combine == NewCombine()
+		combine = NewCombine()
+	}
 
 	// Start listener
 	ln, err := net.Listen("tcp", port)
