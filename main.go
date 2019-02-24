@@ -17,6 +17,7 @@ var (
 	width	uint64	// width to read from connection
 	silo		Silo		// our silo
 	tractor	Tractor	// our tractor
+	combine Combine // out combine
 	mode	string	// "silo" or "tractor"
 	busy		bool	= false	// lock for busy signal
 	auth		bool		// auth mode y/n
@@ -107,6 +108,8 @@ func handler(conn net.Conn) {
 		silo.DoCmd(conn, &connected, write, read, invalid)
 	} else if mode == "tractor" {
 		tractor.DoCmd(conn, &connected, write, read, invalid)
+	} else if mode == "combine" {
+		combine.DoCmd(conn, &connected, write, read, invalid)
 	}
 }
 
@@ -127,7 +130,8 @@ func main() {
 		silo = NewSilo()
 	} else if mode == "tractor" {
 		tractor = NewTractor()
-	}
+	} else if mode == "combine" {
+		combine == NewCombine()
 
 	// Start listener
 	ln, err := net.Listen("tcp", port)
