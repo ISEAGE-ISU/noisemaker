@@ -66,7 +66,11 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 			write("err: no command specified")
 		}
 		
-		if !t.power && argv[0] != "power" {
+		if argv[0] == "power" || argv[0] == "fuel" || argv[0] == "oil" {
+			goto cmd
+		}
+
+		if !t.power {
 			write("err: powered off")
 			goto nocmd
 		}
@@ -90,6 +94,8 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 			write("err: overfull")
 			goto nocmd
 		}
+
+		cmd:
 
 		// Commands master switch
 		switch argv[0] {
@@ -135,7 +141,7 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 				if argv[1] == "add" {
 					t.fuel += 100
 					ok()
-					spin(5, "refueling", "idle")
+					go spin(5, "refueling", "idle")
 				} else {
 					t.fuel = 0
 					ok()
@@ -169,10 +175,10 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 				case 2:
 					if argv[1] == "start" {
 						ok()
-						spin(10, "harvesting", "idle")
+						go spin(10, "harvesting", "idle")
 					} else {
 						ok()
-						spin(10, "harvesting", "idle")
+						go spin(10, "harvesting", "idle")
 					}
 				default:
 					invalid()
@@ -214,12 +220,12 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 					// TODO ­ more max/min logic
 					t.supply += n
 					ok()
-					spin(10, "loading", "idle")
+					go spin(10, "loading", "idle")
 				} else {
 					// lower
 					t.supply -= n
 					ok()
-					spin(10, "unloading", "idle")
+					go spin(10, "unloading", "idle")
 				}
 			default:
 				invalid()
