@@ -10,7 +10,6 @@ sc	"strconv"
 type Silo struct {
 	lights	bool	// whether silo lights are on or not
 	power	bool	// power on/off
-	status	string	// current action
 	humid	int		// current humidity %
 	temp	int		// current temp °C
 	supply	int		// current supply levels bushels
@@ -34,7 +33,7 @@ func (s *Silo) Power() string {
 // Constructor
 func NewSilo() (s Silo) {
 	// Init silo
-	s.status	= "idle"
+	status	= "idle"
 	s.humid	= 30
 	s.temp	= 20
 	s.supply	= 0
@@ -70,7 +69,7 @@ func (s *Silo) DoCmd(conn net.Conn, connected *bool, write func(string), read fu
 		}
 		
 		if busy && argv[0] != "status" {
-			write("err: busy -- " + s.status)
+			write("err: busy -- " + status)
 			goto nocmd
 		}
 
@@ -195,7 +194,7 @@ func (s *Silo) DoCmd(conn net.Conn, connected *bool, write func(string), read fu
 		
 		// Status
 		case "status":
-			write(s.status)
+			write(status)
 		
 		// Manual disconnect commands, for convenience
 		case "quit":

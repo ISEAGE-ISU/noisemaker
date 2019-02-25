@@ -22,6 +22,7 @@ var (
 	busy		bool	= false	// lock for busy signal
 	auth		bool		// auth mode y/n
 	pin		int		// pin
+	status	string	// current status
 )
 
 
@@ -32,9 +33,9 @@ func spin(n int, during, after string) {
 	}
 
 	busy = true
-	silo.status = during
+	status = during
 	time.Sleep(time.Duration(n) * time.Minute)
-	silo.status = after
+	status = after
 	busy = false
 }
 

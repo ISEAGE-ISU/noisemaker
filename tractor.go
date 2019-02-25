@@ -10,7 +10,6 @@ sc	"strconv"
 type Tractor struct {
 	lights	bool		// whether tractor lights are on or not
 	power	bool		// power on/off
-	status	string	// current action
 	humid	int		// current humidity %
 	temp	int		// current temp °C
 	supply	int		// current supply levels bushels
@@ -33,7 +32,7 @@ func (t *Tractor) Power() string {
 // Constructor Tractor
 func NewTractor() (t Tractor) {
 	// Init tractor
-	t.status	= "idle"
+	status	= "idle"
 	t.humid	= 30
 	t.temp	= 20
 	t.supply	= 0
@@ -76,7 +75,7 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 		}
 
 		if busy && argv[0] != "status" {
-			write("err: busy -- " + t.status)
+			write("err: busy -- " + status)
 			goto nocmd
 		}
 
@@ -171,7 +170,7 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 		case "harvest":
 			switch len(argv) {
 				case 1:
-					write(t.status)
+					write(status)
 				case 2:
 					if argv[1] == "start" {
 						ok()
@@ -281,7 +280,7 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 		
 		// Status
 		case "status":
-			write(t.status)
+			write(status)
 		
 		// Manual disconnect commands, for convenience
 		case "quit":
