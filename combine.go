@@ -33,7 +33,7 @@ func (t *Combine) Power() string {
 // Constructor Combine
 func NewCombine() (t Combine) {
 	// Init combine
-	t.status	= "idle"
+	status	= "idle"
 	t.humid	= 30
 	t.temp	= 20
 	t.supply	= 0
@@ -76,7 +76,9 @@ func (t *Combine) DoCmd(conn net.Conn, connected *bool, write func(string), read
 		}
 
 		if busy && argv[0] != "status" {
-			write("err: busy -- " + t.status)
+			slock.Lock()
+			write("err: busy -- " + status)
+			slock.Unlock()
 			goto nocmd
 		}
 
@@ -281,7 +283,9 @@ func (t *Combine) DoCmd(conn net.Conn, connected *bool, write func(string), read
 		
 		// Status
 		case "status":
-			write(t.status)
+			slock.Lock()
+			write(status)
+			slock.Unlock()
 		
 		// Manual disconnect commands, for convenience
 		case "quit":

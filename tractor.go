@@ -17,6 +17,7 @@ type Tractor struct {
 	fuel		int		// fuel %
 	oil		int		// oil %	
 	tires		int		// tires %
+	flag	string	// flag string
 }
 
 // Printable lights format
@@ -32,7 +33,6 @@ func (t *Tractor) Power() string {
 // Constructor Tractor
 func NewTractor() (t Tractor) {
 	// Init tractor
-	status	= "idle"
 	t.humid	= 30
 	t.temp	= 20
 	t.supply	= 0
@@ -75,7 +75,9 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 		}
 
 		if busy && argv[0] != "status" {
+			slock.Lock()
 			write("err: busy -- " + status)
+			slock.Unlock()
 			goto nocmd
 		}
 
@@ -111,6 +113,17 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 					t.lights = false
 				}
 				ok()
+			default:
+				invalid()
+			}
+		
+		// Flag
+		case "flag":
+			switch len(argv) {
+			case 1:
+				write(t.flag)
+			case 2:
+				t.flag = argv[1]
 			default:
 				invalid()
 			}
@@ -280,7 +293,9 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 		
 		// Status
 		case "status":
+			slock.Lock()
 			write(status)
+			slock.Unlock()
 		
 		// Manual disconnect commands, for convenience
 		case "quit":

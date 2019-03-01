@@ -7,6 +7,7 @@ import (
 	"strings"
 	"log"
 	"time"
+	"sync"
 sc	"strconv"
 )
 
@@ -23,6 +24,7 @@ var (
 	auth		bool		// auth mode y/n
 	pin		int		// pin
 	status	string	// current status
+	slock	sync.Mutex	// status lock
 )
 
 
@@ -33,10 +35,17 @@ func spin(n int, during, after string) {
 	}
 
 	busy = true
+	
+	slock.Lock()
 	status = during
+	slock.Unlock()
+	
 	time.Sleep(time.Duration(n) * time.Minute)
 	status = after
+	
+	slock.Lock()
 	busy = false
+	slock.Unlock()
 }
 
 // Handles incoming connections
@@ -127,6 +136,7 @@ func main() {
 		log.Fatal("Error: mode must be one of tractor, silo, or combine.")
 	}
 
+	status = "idle"
 	if mode == "silo" {
 		silo = NewSilo()
 	} else if mode == "tractor" {

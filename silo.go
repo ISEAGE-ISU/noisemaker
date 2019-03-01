@@ -14,6 +14,7 @@ type Silo struct {
 	temp	int		// current temp °C
 	supply	int		// current supply levels bushels
 	cont	string	// current contents
+	flag	string	// flag string
 }
 
 // Printable lights format
@@ -33,7 +34,6 @@ func (s *Silo) Power() string {
 // Constructor
 func NewSilo() (s Silo) {
 	// Init silo
-	status	= "idle"
 	s.humid	= 30
 	s.temp	= 20
 	s.supply	= 0
@@ -69,7 +69,9 @@ func (s *Silo) DoCmd(conn net.Conn, connected *bool, write func(string), read fu
 		}
 		
 		if busy && argv[0] != "status" {
+			slock.Lock()
 			write("err: busy -- " + status)
+			slock.Unlock()
 			goto nocmd
 		}
 
@@ -93,6 +95,17 @@ func (s *Silo) DoCmd(conn net.Conn, connected *bool, write func(string), read fu
 					s.lights = false
 				}
 				ok()
+			default:
+				invalid()
+			}
+			
+		// Flag
+		case "flag":
+			switch len(argv) {
+			case 1:
+				write(s.flag)
+			case 2:
+				s.flag = argv[1]
 			default:
 				invalid()
 			}
@@ -194,7 +207,9 @@ func (s *Silo) DoCmd(conn net.Conn, connected *bool, write func(string), read fu
 		
 		// Status
 		case "status":
+			slock.Lock()
 			write(status)
+			slock.Unlock()
 		
 		// Manual disconnect commands, for convenience
 		case "quit":
