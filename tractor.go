@@ -153,7 +153,7 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 				if argv[1] == "add" {
 					t.fuel += 100
 					ok()
-					go spin(5, "refueling", "idle")
+					go spin(1, "refueling", "idle")
 				} else {
 					t.fuel = 0
 					ok()
