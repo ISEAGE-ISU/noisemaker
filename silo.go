@@ -133,12 +133,12 @@ func (s *Silo) DoCmd(conn net.Conn, connected *bool, write func(string), read fu
 					// TODO ­ more max/min logic
 					s.supply += n
 					ok()
-					go spin(10, "loading", "idle")
+					go spin(2, "loading", "idle")
 				} else {
 					// lower
 					s.supply -= n
 					ok()
-					go spin(10, "unloading", "idle")
+					go spin(2, "unloading", "idle")
 				}
 			default:
 				invalid()

@@ -174,10 +174,10 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 				case 2:
 					if argv[1] == "start" {
 						ok()
-						go spin(10, "harvesting", "idle")
+						go spin(2, "harvesting", "idle")
 					} else {
 						ok()
-						go spin(10, "harvesting", "idle")
+						go spin(2, "harvesting", "idle")
 					}
 				default:
 					invalid()
@@ -219,12 +219,12 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 					// TODO ­ more max/min logic
 					t.supply += n
 					ok()
-					go spin(10, "loading", "idle")
+					go spin(2, "loading", "idle")
 				} else {
 					// lower
 					t.supply -= n
 					ok()
-					go spin(10, "unloading", "idle")
+					go spin(2, "unloading", "idle")
 				}
 			default:
 				invalid()
