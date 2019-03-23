@@ -9,6 +9,7 @@ import (
 	"time"
 	"sync"
 sc	"strconv"
+	"os"
 )
 
 
@@ -51,6 +52,7 @@ func spin(n int, during, after string) {
 // Handles incoming connections
 func handler(conn net.Conn) {
 	connected := true
+	msgChan := make(chan string)
 
 	defer conn.Close()
 	
@@ -81,12 +83,10 @@ func handler(conn net.Conn) {
 		}
 	}
 	
-	invalid := func() {
-		write("err: invalid arguments")
-	}
-	
+	// "Do it with flare" ­ Clockwerk
 	write(banner)	
 	
+	// PIN Authentication
 	if auth {
 		// Verify auth
 		buf := make([]byte, width)
@@ -98,29 +98,56 @@ func handler(conn net.Conn) {
 		
 		p, err := sc.Atoi(pinstr)
 		
-		if err != nil {
+		if !(p == 0 || p < 0 || p > 999999 || p == pin) || err != nil {
 			write("Access denied.")
 			conn.Close()
+			return
+		} else {
+			write("Access granted.\n")
+		}
+
+	}
+
+	switch mode {
+	case "silo":
+		go silo.DoCmd(msgChan)
+	case "tractor":
+		go tractor.DoCmd(msgChan)
+	case "combine":
+		write("Vendor must add Combine support for 2.0 control schema")
+		os.Exit(1337)
+	}
+	
+	// Empty strings are indicative of desiring teardown
+	for connected {
+		// Errors can be dealt with later
+		conn.Write([]byte("> "))
+	
+		buf := make([]byte, width)
+
+		_, err := conn.Read(buf)
+		if err != nil {
+			break
+		}
+
+		msgChan <- string(buf)
+		
+		msg, more := <- msgChan
+
+		// If quit or similar command to end connection
+		if !more {
 			connected = false
+			msg = "ok."
 		}
 		
-		if !(p == 0 || p < 0 || p > 999999 || p == pin) {
-			write("Access denied.")
-			conn.Close()
-			connected = false
-		} else {
-			write("Access granted.")
-		}
-
+		write(msg)
 	}
 
-	if mode == "silo" {
-		silo.DoCmd(conn, &connected, write, read, invalid)
-	} else if mode == "tractor" {
-		tractor.DoCmd(conn, &connected, write, read, invalid)
-	} else if mode == "combine" {
-		combine.DoCmd(conn, &connected, write, read, invalid)
+	if _, more := <- msgChan; more {
+		close(msgChan)
 	}
+
+	log.Println("Handler ended")
 }
 
 // Simulates a silo, listens on tcp/1337

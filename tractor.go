@@ -2,7 +2,7 @@ package main
 
 import (
 	"strings"
-	"net"
+	"log"
 sc	"strconv"
 )
 
@@ -44,15 +44,16 @@ func NewTractor() (t Tractor) {
 	return
 }
 
-func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read func([]byte), invalid func()) {
-	ok := func() { write("ok.") }
+func (t *Tractor) DoCmd(msgChan chan string) {
+	ok := func() { msgChan <- "ok." }
+	invalid := func() { msgChan <- "err: invalid arguments" }
 
-	for *connected {
-		buf := make([]byte, width)
-		
-		conn.Write([]byte("> "))
-
-		read(buf)
+	for {
+		buf, more := <- msgChan
+		if !more {
+			log.Println("Got empty cmd")
+			break 
+		}
 
 		argv := strings.Fields(string(buf))
 		
@@ -62,7 +63,7 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 		}
 
 		if len(argv) < 1 {
-			write("err: no command specified")
+			msgChan <- "err: no command specified"
 		}
 		
 		if argv[0] == "power" || argv[0] == "fuel" || argv[0] == "oil" {
@@ -70,30 +71,30 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 		}
 
 		if !t.power {
-			write("err: powered off")
-			goto nocmd
+			msgChan <- "err: powered off"
+			continue
 		}
 
 		if busy && argv[0] != "status" {
 			slock.Lock()
-			write("err: busy -- " + status)
+			msgChan <- "err: busy -- " + status
 			slock.Unlock()
-			goto nocmd
+			continue
 		}
 
 		if t.fuel <= 0 && argv[0] != "fuel" {
-			write("err: no fuel")
-			goto nocmd
+			msgChan <- "err: no fuel"
+			continue
 		}
 
 		if t.oil <= 0 && argv[0] != "oil" {
-			write("err: no oil")
-			goto nocmd
+			msgChan <- "err: no oil"
+			continue
 		}
 
 		if t.supply > 100 && argv[0] != "supply" {
-			write("err: overfull")
-			goto nocmd
+			msgChan <- "err: overfull"
+			continue
 		}
 
 		cmd:
@@ -105,7 +106,7 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 		case "lights":
 			switch len(argv) {
 			case 1:
-				write(string(t.Lights()))
+				msgChan <- string(t.Lights())
 			case 2:
 				if argv[1] == "on" {
 					t.lights = true
@@ -121,9 +122,10 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 		case "flag":
 			switch len(argv) {
 			case 1:
-				write(t.flag)
+				msgChan <- t.flag
 			case 2:
 				t.flag = argv[1]
+				ok()
 			default:
 				invalid()
 			}
@@ -132,7 +134,7 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 		case "oil":
 			switch len(argv) {
 			case 1:
-				write(sc.Itoa(t.oil))
+				msgChan <- sc.Itoa(t.oil)
 			case 2:
 				if argv[1] == "add" {
 					t.oil += 100
@@ -148,7 +150,7 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 		case "fuel":
 			switch len(argv) {
 			case 1:
-				write(sc.Itoa(t.fuel))
+				msgChan <- sc.Itoa(t.fuel)
 			case 2:
 				if argv[1] == "add" {
 					t.fuel += 100
@@ -166,7 +168,7 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 		case "tires":
 			switch len(argv) {
 			case 1:
-				write(sc.Itoa(t.tires))
+				msgChan <- sc.Itoa(t.tires)
 				ok()
 			case 2:
 				if argv[1] == "inflate" {
@@ -183,7 +185,7 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 		case "harvest":
 			switch len(argv) {
 				case 1:
-					write(status)
+					msgChan <- status
 				case 2:
 					if argv[1] == "start" {
 						ok()
@@ -198,13 +200,13 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 
 		// Contents
 		case "contents":
-			write(t.cont)
+			msgChan <- t.cont
 		
 		// Power
 		case "power":
 			switch len(argv) {
 			case 1:
-				write(string(t.Power()))
+				msgChan <- string(t.Power())
 			case 2:
 				if argv[1] == "on" {
 					t.power = true
@@ -220,7 +222,7 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 		case "supply":
 			switch len(argv) {
 			case 1:
-				write(sc.Itoa(t.supply))
+				msgChan <- sc.Itoa(t.supply)
 			case 3:
 				n, err := sc.Atoi(argv[2])
 
@@ -247,7 +249,7 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 		case "heat":
 			switch len(argv) {
 			case 1:
-				write(sc.Itoa(t.temp))
+				msgChan <- sc.Itoa(t.temp)
 			case 3:
 				n, err := sc.Atoi(argv[2])
 
@@ -271,7 +273,7 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 		case "humidity":
 			switch len(argv) {
 			case 1:
-				write(sc.Itoa(t.humid))
+				msgChan <- sc.Itoa(t.humid)
 			case 3:
 				n, err := sc.Atoi(argv[2])
 
@@ -294,21 +296,24 @@ func (t *Tractor) DoCmd(conn net.Conn, connected *bool, write func(string), read
 		// Status
 		case "status":
 			slock.Lock()
-			write(status)
+			msgChan <- status
 			slock.Unlock()
 		
 		// Manual disconnect commands, for convenience
 		case "quit":
 			fallthrough
 		case "exit":
-			ok()
-			return
-			break
+			close(msgChan)
 
 		// Command not found
 		default:
-			write("err: unknown command")
+			msgChan <- "err: unknown command"
 		}
-		nocmd:
 	}
+	
+	if _, more := <- msgChan; more {
+		close(msgChan)
+	}
+	
+	log.Println("Tractor ended")
 }
