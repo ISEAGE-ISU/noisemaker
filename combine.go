@@ -76,9 +76,7 @@ func (t *Combine) DoCmd(conn net.Conn, connected *bool, write func(string), read
 		}
 
 		if busy && argv[0] != "status" {
-			slock.Lock()
-			write("err: busy -- " + status)
-			slock.Unlock()
+			write("err: busy -- " + stat())
 			goto nocmd
 		}
 
@@ -283,9 +281,7 @@ func (t *Combine) DoCmd(conn net.Conn, connected *bool, write func(string), read
 		
 		// Status
 		case "status":
-			slock.Lock()
-			write(status)
-			slock.Unlock()
+			write(stat())
 		
 		// Manual disconnect commands, for convenience
 		case "quit":

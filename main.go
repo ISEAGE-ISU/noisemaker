@@ -7,7 +7,6 @@ import (
 	"strings"
 	"log"
 	"time"
-	"sync"
 sc	"strconv"
 	"os"
 )
@@ -25,7 +24,8 @@ var (
 	auth		bool		// auth mode y/n
 	pin		int		// pin
 	status	string	// current status
-	slock	sync.Mutex	// status lock
+	reqChan		chan string	// status request channel, unbuffered
+	statChan	chan string	// status channel, unbuffered
 )
 
 
@@ -35,18 +35,40 @@ func spin(n int, during, after string) {
 		time.Sleep(15 * time.Millisecond)
 	}
 
+	// Might be bad
 	busy = true
 	
-	slock.Lock()
-	status = during
-	slock.Unlock()
+	reqChan <- during
 	
 	time.Sleep(time.Duration(n) * time.Minute)
-	status = after
+
+	reqChan <- after
 	
-	slock.Lock()
 	busy = false
-	slock.Unlock()
+}
+
+// Handshakes for current status
+func stat() string {
+	reqChan <- ""
+	return <-statChan
+}
+
+// Manages status
+func statuser() {
+	for {
+		select {
+		case req := <- reqChan:
+			switch req {
+			case "":
+				// Ordinary request
+				statChan <- status
+			default:
+				status = req
+			}
+		default:
+			time.Sleep(5)
+		}
+	}
 }
 
 // Handles incoming connections
@@ -163,13 +185,21 @@ func main() {
 		log.Fatal("Error: mode must be one of tractor, silo, or combine.")
 	}
 
+	// Set up status management
 	status = "idle"
-	if mode == "silo" {
+	statChan = make(chan string)
+	reqChan = make(chan string)
+	go statuser()
+
+	switch mode {
+	case "silo":
 		silo = NewSilo()
-	} else if mode == "tractor" {
+	case "tractor":
 		tractor = NewTractor()
-	} else if mode == "combine" {
+	case "combine":
 		combine = NewCombine()
+	default:
+		log.Fatal("Error: Invalid mode --", mode)
 	}
 
 	// Start listener

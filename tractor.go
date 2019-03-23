@@ -51,7 +51,6 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 	for {
 		buf, more := <- msgChan
 		if !more {
-			log.Println("Got empty cmd")
 			break 
 		}
 
@@ -76,9 +75,7 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 		}
 
 		if busy && argv[0] != "status" {
-			slock.Lock()
-			msgChan <- "err: busy -- " + status
-			slock.Unlock()
+			msgChan <- "err: busy -- " + stat()
 			continue
 		}
 
@@ -295,9 +292,7 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 		
 		// Status
 		case "status":
-			slock.Lock()
-			msgChan <- status
-			slock.Unlock()
+			msgChan <- stat()
 		
 		// Manual disconnect commands, for convenience
 		case "quit":
