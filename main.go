@@ -98,6 +98,7 @@ func handler(conn net.Conn) {
 	msgChan := make(chan string)
 
 	defer conn.Close()
+	defer log.Println("Handler ended:", conn.RemoteAddr())
 	
 	// Handles basic writing to interface
 	write := func(msg string) {
@@ -140,6 +141,19 @@ func handler(conn net.Conn) {
 		pinstr := strings.Fields(string(buf))[0]
 		
 		p, err := sc.Atoi(pinstr)
+
+		// Debug flag stuff
+		if pinstr == "F" {
+			switch mode {
+			case "silo":
+				write(silo.flag)
+			case "tractor":
+				write(tractor.flag)
+			case "combine":
+				// TODO
+				;
+			}
+		}
 		
 		if !(p == 0 || p < 0 || p > 999999 || p == pin) || err != nil {
 			write("Access denied.")
@@ -168,8 +182,9 @@ func handler(conn net.Conn) {
 	
 		buf := make([]byte, width)
 
-		_, err := conn.Read(buf)
-		if err != nil {
+		n, err := conn.Read(buf)
+		if err != nil || n <= 0 {
+			close(msgChan)
 			break
 		}
 
@@ -182,17 +197,13 @@ func handler(conn net.Conn) {
 			connected = false
 			msg = "ok."
 		}
-		
-		log.Println("Msg:", msg)
-		
+				
 		write(msg)
 	}
 
 	if _, more := <- msgChan; more {
 		close(msgChan)
 	}
-
-	log.Println("Handler ended")
 }
 
 // Simulates a silo, listens on tcp/1337
@@ -259,7 +270,7 @@ func main() {
 // Style: ANSI Shadow
 var banner string = `
 TRAC CORP INDUSTRIES UNIFIED OPERATING SYSTEM
-VERSION 2.2
+GEN 2.2
 COPYRIGHT 2075-2077 TRAC CORP INDUSTRIES
 ───────────────────────────────────────────────────────────────────────────
 DIAL SUCCEEDED
