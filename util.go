@@ -31,3 +31,13 @@ func b2s(b bool) string {
 
 	return "off"
 }
+
+// String to bool
+func s2b(s string) bool {
+	switch s {
+	case "on":
+		return true
+	default:
+		return false
+	}
+}

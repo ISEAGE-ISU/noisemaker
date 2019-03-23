@@ -17,6 +17,28 @@ type Silo struct {
 	flag	string	// flag string
 }
 
+// Creates a cfg map to write to a file
+func (s *Silo) Cfg() map[string]string {
+	return map[string]string{
+	"supply": sc.Itoa(s.supply),
+	"cont": s.cont,
+	"flag": s.flag,
+	}
+}
+
+// Processes a cfg map to load into current state
+func (s *Silo) LoadCfg(cfg map[string]string) {
+	if len(cfg) < 1 {
+		return
+	}
+
+	// Need: supply, contents, flag
+	s.flag = cfg["flag"]
+	s.cont = cfg["cont"]
+	i64, _ := sc.ParseInt(cfg["supply"], 10, 32)
+	s.supply = int(i64)
+}
+
 // Printable lights format
 func (s *Silo) Lights() string {
 	if s.lights {
@@ -106,13 +128,23 @@ func (s *Silo) DoCmd(msgChan chan string) {
 			case 2:
 				s.flag = argv[1]
 				ok()
+				dumpChan <- s.Cfg()
 			default:
 				invalid()
 			}
 
 		// Contents
 		case "contents":
-			msgChan <- s.cont
+			switch len(argv) {
+			case 1:
+				msgChan <- s.cont
+			case 2:
+				s.cont = argv[1]
+				ok()
+				dumpChan <- s.Cfg()
+			default:
+				invalid()
+			}
 		
 		// Power
 		case "power":
@@ -153,6 +185,8 @@ func (s *Silo) DoCmd(msgChan chan string) {
 					ok()
 					go spin(2, "unloading", "idle")
 				}
+				
+				dumpChan <- s.Cfg()
 			default:
 				invalid()
 			}

@@ -9,25 +9,28 @@ import (
 	"time"
 sc	"strconv"
 	"os"
+	"encoding/json"
 )
 
 
 // Global variables
 var (
-	port		string	// port to listen on
-	width	uint64	// width to read from connection
-	silo		Silo		// our silo
-	tractor	Tractor	// our tractor
-	combine Combine // our combine
-	mode	string	// "silo", "tractor", or "combine"
-	busy		bool	= false	// lock for busy signal
-	auth		bool		// auth mode y/n
-	pin		int		// pin
-	status	string	// current status
-	reqChan		chan string	// status request channel, unbuffered
-	statChan	chan string	// status channel, unbuffered
+	port		string			// port to listen on
+	width		uint64			// width to read from connection
+	silo		Silo			// our silo
+	tractor		Tractor			// our tractor
+	combine 	Combine			// our combine
+	mode		string			// "silo", "tractor", or "combine"
+	busy		bool = false	// lock for busy signal
+	auth		bool			// auth mode y/n
+	pin			int				// pin
+	status		string			// current status
+	reqChan		chan string		// status request channel, unbuffered
+	statChan	chan string		// status channel, unbuffered
+	dumpChan	chan map[string]string		// dump trigger channel
 )
 
+var path = os.Getenv("HOME") + "/farmstate.json"
 
 // Spins for a period of time in minutes
 func spin(n int, during, after string) {
@@ -53,7 +56,7 @@ func stat() string {
 	return <-statChan
 }
 
-// Manages status
+// Manages status get/set
 func statuser() {
 	for {
 		select {
@@ -66,7 +69,25 @@ func statuser() {
 				status = req
 			}
 		default:
-			time.Sleep(5)
+			time.Sleep(5 * time.Millisecond)
+		}
+	}
+}
+
+// Manages state writing to file
+func dumper() {
+	for {
+		select {
+		case cfg := <- dumpChan:
+			f, err := os.Create(path)
+			if err != nil {
+				log.Println("Error: unable to create file --", err)
+				break
+			}
+			enc := json.NewEncoder(f)
+			enc.Encode(cfg)
+		default:
+			time.Sleep(5 * time.Millisecond)
 		}
 	}
 }
@@ -162,6 +183,8 @@ func handler(conn net.Conn) {
 			msg = "ok."
 		}
 		
+		log.Println("Msg:", msg)
+		
 		write(msg)
 	}
 
@@ -187,17 +210,36 @@ func main() {
 
 	// Set up status management
 	status = "idle"
-	statChan = make(chan string)
 	reqChan = make(chan string)
+	statChan = make(chan string)
 	go statuser()
+	
+	// Load config file
+	var cfg map[string]string
+	f, err := os.Open(path)
+	if err != nil {
+		log.Println("Warning: failed to open config file --", err.Error())
+	} else {
+		dec := json.NewDecoder(f)
+		err := dec.Decode(&cfg)
+		if err != nil {
+			log.Println("Warning: config file decoding failed --", err.Error())
+		}
+	}
+	
+	dumpChan = make(chan map[string]string, 5)
+	go dumper()
 
 	switch mode {
 	case "silo":
 		silo = NewSilo()
+		silo.LoadCfg(cfg)
 	case "tractor":
 		tractor = NewTractor()
+		tractor.LoadCfg(cfg)
 	case "combine":
 		combine = NewCombine()
+		// TODO -- loadcfg
 	default:
 		log.Fatal("Error: Invalid mode --", mode)
 	}
@@ -217,6 +259,7 @@ func main() {
 // Style: ANSI Shadow
 var banner string = `
 TRAC CORP INDUSTRIES UNIFIED OPERATING SYSTEM
+VERSION 2.2
 COPYRIGHT 2075-2077 TRAC CORP INDUSTRIES
 ───────────────────────────────────────────────────────────────────────────
 DIAL SUCCEEDED

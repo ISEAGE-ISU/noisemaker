@@ -20,6 +20,41 @@ type Tractor struct {
 	flag	string	// flag string
 }
 
+// Creates a cfg map to write to a file
+func (t *Tractor) Cfg() map[string]string {
+	return map[string]string{
+	"supply": sc.Itoa(t.supply),
+	"cont": t.cont,
+	"flag": t.flag,
+	"fuel": sc.Itoa(t.fuel),
+	"oil": sc.Itoa(t.oil),
+	"tires": sc.Itoa(t.tires),
+	}
+}
+
+// Processes a cfg map to load into current state
+func (t *Tractor) LoadCfg(cfg map[string]string) {
+	if len(cfg) < 1 {
+		return
+	}
+
+	// Need: supply, contents, flag, fuel, oil, tires
+	t.flag = cfg["flag"]
+	t.cont = cfg["cont"]
+
+	i64, _ := sc.ParseInt(cfg["supply"], 10, 32)
+	t.supply = int(i64)
+	
+	i64, _ = sc.ParseInt(cfg["fuel"], 10, 32)
+	t.fuel = int(i64)
+	
+	i64, _ = sc.ParseInt(cfg["oil"], 10, 32)
+	t.oil = int(i64)
+	
+	i64, _ = sc.ParseInt(cfg["tires"], 10, 32)
+	t.tires = int(i64)
+}
+
 // Printable lights format
 func (t *Tractor) Lights() string {
 	return b2s(t.lights)
@@ -49,6 +84,8 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 	invalid := func() { msgChan <- "err: invalid arguments" }
 
 	for {
+		log.Println("New loop")
+	
 		buf, more := <- msgChan
 		if !more {
 			break 
@@ -63,6 +100,7 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 
 		if len(argv) < 1 {
 			msgChan <- "err: no command specified"
+			continue
 		}
 		
 		if argv[0] == "power" || argv[0] == "fuel" || argv[0] == "oil" {
@@ -95,6 +133,8 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 		}
 
 		cmd:
+		
+		log.Println("start switch")
 
 		// Commands master switch
 		switch argv[0] {
@@ -123,6 +163,7 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 			case 2:
 				t.flag = argv[1]
 				ok()
+				dumpChan <- t.Cfg()
 			default:
 				invalid()
 			}
@@ -136,6 +177,7 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 				if argv[1] == "add" {
 					t.oil += 100
 					ok()
+					dumpChan <- t.Cfg()
 				} else {
 					invalid()
 				}
@@ -157,6 +199,7 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 					t.fuel = 0
 					ok()
 				}
+				dumpChan <- t.Cfg()
 			default:
 				invalid()
 			}
@@ -174,6 +217,7 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 					t.tires = 0
 				}
 				ok()
+				dumpChan <- t.Cfg()
 			default:
 				invalid()
 			}
@@ -182,7 +226,7 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 		case "harvest":
 			switch len(argv) {
 				case 1:
-					msgChan <- status
+					msgChan <- stat()
 				case 2:
 					if argv[1] == "start" {
 						ok()
@@ -197,7 +241,16 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 
 		// Contents
 		case "contents":
-			msgChan <- t.cont
+			switch len(argv) {
+			case 1:
+				msgChan <- t.cont
+			case 2:
+				t.cont = argv[1]
+				ok()
+				dumpChan <- t.Cfg()
+			default:
+				invalid()
+			}
 		
 		// Power
 		case "power":
@@ -238,6 +291,8 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 					ok()
 					go spin(2, "unloading", "idle")
 				}
+				
+				dumpChan <- t.Cfg()
 			default:
 				invalid()
 			}
@@ -292,7 +347,9 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 		
 		// Status
 		case "status":
+			log.Println("reached status")
 			msgChan <- stat()
+			log.Println("left status")
 		
 		// Manual disconnect commands, for convenience
 		case "quit":
