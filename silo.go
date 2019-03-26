@@ -194,10 +194,14 @@ func (s *Silo) DoCmd(msgChan chan string) {
 				}
 
 				if argv[1] == "load" {
-					// TODO ­ more max/min logic
-					s.supply += n
-					ok()
-					go spin(2, "loading", "idle")
+					if s.supply + n > 1000 {
+						msgChan <- "err: Supply would go overfull!"
+						break
+					} else {
+						s.supply += n
+						ok()
+						go spin(2, "loading", "idle")
+					}
 				} else {
 					// lower
 					if s.supply - n < 0 {
