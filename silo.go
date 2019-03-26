@@ -23,6 +23,7 @@ func (s *Silo) Cfg() map[string]string {
 	"supply": sc.Itoa(s.supply),
 	"cont": s.cont,
 	"flag": s.flag,
+	"pin": sc.Itoa(pin),
 	}
 }
 
@@ -37,6 +38,7 @@ func (s *Silo) LoadCfg(cfg map[string]string) {
 	s.cont = cfg["cont"]
 	i64, _ := sc.ParseInt(cfg["supply"], 10, 32)
 	s.supply = int(i64)
+	pin, _ = sc.Atoi(cfg["pin"])
 }
 
 // Printable lights format
@@ -116,6 +118,23 @@ func (s *Silo) DoCmd(msgChan chan string) {
 					s.lights = false
 				}
 				ok()
+			default:
+				invalid()
+			}
+		
+		// PIN
+		case "pin":
+			switch len(argv) {
+			case 1:
+				msgChan <- string(pin)
+			case 2:
+				if p, err := sc.Atoi(argv[1]); err != nil {
+					invalid()
+				} else {
+					pin = p
+					ok()
+					dumpChan <- s.Cfg()
+				}
 			default:
 				invalid()
 			}
