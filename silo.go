@@ -247,11 +247,20 @@ func (s *Silo) DoCmd(msgChan chan string) {
 				}
 
 				if argv[1] == "raise" {
-					// TODO ­ more max/min logic
-					s.humid += n
+					if humid + n > 100 {
+						msgChan <- "err: Humidity would exceed max!"
+					} else {
+						s.humid += n
+						ok()
+					}
 				} else {
 					// lower
-					s.humid -= n
+					if humid - n < 0 {
+						msgChan <- "err: Humidity would be negative!"
+					} else {
+						s.humid -= n
+						ok()
+					}
 				}
 				ok()
 			default:
