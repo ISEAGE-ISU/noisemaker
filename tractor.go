@@ -87,8 +87,6 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 	invalid := func() { msgChan <- "err: invalid arguments" }
 
 	for {
-		log.Println("New loop")
-	
 		buf, more := <- msgChan
 		if !more {
 			break 
@@ -136,9 +134,6 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 		}
 
 		cmd:
-		
-		log.Println("start switch")
-
 		// Commands master switch
 		switch argv[0] {
 		
@@ -229,7 +224,6 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 			switch len(argv) {
 			case 1:
 				msgChan <- sc.Itoa(t.tires)
-				ok()
 			case 2:
 				if argv[1] == "inflate" {
 					t.tires = 100
@@ -367,9 +361,7 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 		
 		// Status
 		case "status":
-			log.Println("reached status")
 			msgChan <- stat()
-			log.Println("left status")
 		
 		// Manual disconnect commands, for convenience
 		case "quit":
