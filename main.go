@@ -270,7 +270,7 @@ func main() {
 // Style: ANSI Shadow
 var banner string = `
 TRAC CORP INDUSTRIES UNIFIED OPERATING SYSTEM
-GEN 2.3
+GEN 2.3.1
 COPYRIGHT 2075-2077 TRAC CORP INDUSTRIES
 ───────────────────────────────────────────────────────────────────────────
 DIAL SUCCEEDED
