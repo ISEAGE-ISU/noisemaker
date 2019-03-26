@@ -200,9 +200,14 @@ func (s *Silo) DoCmd(msgChan chan string) {
 					go spin(2, "loading", "idle")
 				} else {
 					// lower
-					s.supply -= n
-					ok()
-					go spin(2, "unloading", "idle")
+					if s.supply - n < 0 {
+						msgChan <- "err: Supply may not go negative!"
+						break
+					} else {
+						s.supply -= n
+						ok()
+						go spin(2, "unloading", "idle")
+					}
 				}
 				
 				dumpChan <- s.Cfg()
