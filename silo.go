@@ -88,20 +88,26 @@ func (s *Silo) DoCmd(msgChan chan string) {
 			continue
 		}
 		
-		if !s.power && argv[0] != "power" {
+		if argv[0] == "power" || argv[0] == "supply" || argv[0] == "status" {
+			goto cmd
+		}
+		
+		if !s.power {
 			msgChan <- "err: powered off"
 			continue
 		}
 		
-		if busy && argv[0] != "status" {
+		if busy {
 			msgChan <- "err: busy -- " + stat()
 			continue
 		}
 
-		if s.supply > 1000 && argv[0] != "supply" {
+		if s.supply > 1000 {
 			msgChan <- "err: overfull"
 			continue
 		}
+		
+		cmd:
 
 		// Commands master switch
 		switch argv[0] {
