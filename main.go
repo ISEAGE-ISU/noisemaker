@@ -171,7 +171,7 @@ func handler(conn net.Conn) {
 			}
 		}
 		
-		if !(p == 0 || p < 0 || p > 999999 || p == pin) || err != nil {
+		if !(p == 0 || p < 0 || p == pin) || err != nil {
 			write("Access denied.")
 			conn.Close()
 			return
@@ -287,7 +287,7 @@ func main() {
 // Style: ANSI Shadow
 var banner string = `
 TRAC CORP INDUSTRIES UNIFIED OPERATING SYSTEM
-GEN 2.3.1
+GEN 2.3.3
 COPYRIGHT 2075-2077 TRAC CORP INDUSTRIES
 ───────────────────────────────────────────────────────────────────────────
 DIAL SUCCEEDED

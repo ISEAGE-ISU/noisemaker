@@ -118,12 +118,16 @@ func (s *Silo) DoCmd(msgChan chan string) {
 			case 1:
 				msgChan <- string(s.Lights())
 			case 2:
-				if argv[1] == "on" {
+				switch argv[1] {
+				case "on":
 					s.lights = true
-				} else {
+					ok()
+				case "off":
 					s.lights = false
+					ok()
+				default:
+					invalid()
 				}
-				ok()
 			default:
 				invalid()
 			}
@@ -181,12 +185,16 @@ func (s *Silo) DoCmd(msgChan chan string) {
 			case 1:
 				msgChan <- string(s.Power())
 			case 2:
-				if argv[1] == "on" {
+				switch argv[1] {
+				case "on":
 					s.power = true
-				} else {
+					ok()
+				case "off":
 					s.power = false
+					ok()
+				default:
+					invalid()
 				}
-				ok()
 			default:
 				invalid()
 			}
@@ -249,7 +257,7 @@ func (s *Silo) DoCmd(msgChan chan string) {
 					} else {
 						s.temp += n
 					}
-				} else {
+				} else if argv[1] == "lower" {
 					// lower
 					if s.temp - n < 0 {
 						msgChan <- "err: Temp would be negative!"
@@ -283,7 +291,7 @@ func (s *Silo) DoCmd(msgChan chan string) {
 					} else {
 						s.humid += n
 					}
-				} else {
+				} else if argv[1] == "lower" {
 					// lower
 					if s.humid - n < 0 {
 						msgChan <- "err: Humidity would be negative!"

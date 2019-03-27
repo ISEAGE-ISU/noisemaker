@@ -143,12 +143,16 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 			case 1:
 				msgChan <- string(t.Lights())
 			case 2:
-				if argv[1] == "on" {
+				switch argv[1] {
+				case "on":
 					t.lights = true
-				} else {
+					ok()
+				case "off":
 					t.lights = false
+					ok()
+				default:
+					invalid()
 				}
-				ok()
 			default:
 				invalid()
 			}
@@ -222,12 +226,16 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 			case 1:
 				msgChan <- sc.Itoa(t.tires)
 			case 2:
-				if argv[1] == "inflate" {
+				switch argv[1] {
+				case "inflate":
 					t.tires = 100
-				} else {
+					ok()
+				case "deflate": 
 					t.tires = 0
+					ok()
+				default:
+					invalid()
 				}
-				ok()
 				dumpChan <- t.Cfg()
 			default:
 				invalid()
@@ -276,12 +284,16 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 			case 1:
 				msgChan <- string(t.Power())
 			case 2:
-				if argv[1] == "on" {
+				switch argv[1] {
+				case "on":
 					t.power = true
-				} else {
+					ok()
+				case "off":
 					t.power = false
+					ok()
+				default:
+					invalid()
 				}
-				ok()
 			default:
 				invalid()
 			}
@@ -325,16 +337,19 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 
 				if err != nil {
 					invalid()
+					break
 				}
 
-				if argv[1] == "raise" {
-					// TODO ­ more max/min logic
+				switch argv[1] {
+				case "raise":
 					t.temp += n
-				} else {
-					// lower
+					ok()
+				case "lower":
 					t.temp -= n
+					ok()
+				default:
+					invalid()
 				}
-				ok()
 			default:
 				invalid()
 			}
@@ -349,16 +364,19 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 
 				if err != nil {
 					invalid()
+					break
 				}
 
-				if argv[1] == "raise" {
-					// TODO ­ more max/min logic
+				switch argv[1] {
+				case "raise":
 					t.humid += n
-				} else {
-					// lower
+					ok()
+				case "lower":
 					t.humid -= n
+					ok()
+				default:
+					invalid()
 				}
-				ok()
 			default:
 				invalid()
 			}
