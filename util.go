@@ -41,3 +41,14 @@ func s2b(s string) bool {
 		return false
 	}
 }
+
+// Check if s contains a t
+func in(s []string, t string) bool {
+	for _, v := range s {
+		if v == t {
+			return true
+		}
+	}
+	
+	return false
+}

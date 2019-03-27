@@ -190,7 +190,7 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 				msgChan <- sc.Itoa(t.oil)
 			case 2:
 				if argv[1] == "add" {
-					t.oil += 100
+					t.oil = 100
 					ok()
 					dumpChan <- t.Cfg()
 				} else {
@@ -206,13 +206,10 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 			case 1:
 				msgChan <- sc.Itoa(t.fuel)
 			case 2:
-				if argv[1] == "add" {
-					t.fuel += 100
+				if argv[1] == "add" && t.fuel < 100 {
+					t.fuel = 100
 					ok()
 					go spin(1, "refueling", "idle")
-				} else {
-					t.fuel = 0
-					ok()
 				}
 				dumpChan <- t.Cfg()
 			default:
@@ -242,12 +239,15 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 				case 1:
 					msgChan <- stat()
 				case 2:
-					if argv[1] == "start" {
+					if argv[1] == "start" && !busy && t.tires >= 80 && t.fuel >= 25 {
 						ok()
+						t.fuel -= 25
+						t.tires -= 10
+						t.oil -= 10
 						go spin(2, "harvesting", "idle")
-					} else {
+					} else if argv[1] == "stop" && stat() == "harvesting" {
+						stopChan <- true
 						ok()
-						go spin(2, "harvesting", "idle")
 					}
 				default:
 					invalid()
@@ -259,9 +259,13 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 			case 1:
 				msgChan <- t.cont
 			case 2:
-				t.cont = argv[1]
-				ok()
-				dumpChan <- t.Cfg()
+				if in(contTypes, argv[1]) {
+					t.cont = argv[1]
+					ok()
+					dumpChan <- t.Cfg()
+				} else {
+					invalid()
+				}
 			default:
 				invalid()
 			}

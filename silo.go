@@ -164,9 +164,13 @@ func (s *Silo) DoCmd(msgChan chan string) {
 			case 1:
 				msgChan <- s.cont
 			case 2:
-				s.cont = argv[1]
-				ok()
-				dumpChan <- s.Cfg()
+				if in(contTypes, argv[1]) {
+					s.cont = argv[1]
+					ok()
+					dumpChan <- s.Cfg()
+				} else {
+					invalid()
+				}
 			default:
 				invalid()
 			}

@@ -12,6 +12,8 @@ sc	"strconv"
 	"encoding/json"
 )
 
+// Valid contents of a given container
+var contTypes []string = []string{"corn", "salt", "soybeans", "grain", "ducks"}
 
 // Global variables
 var (
@@ -28,6 +30,7 @@ var (
 	reqChan		chan string		// status request channel, unbuffered
 	statChan	chan string		// status channel, unbuffered
 	dumpChan	chan map[string]string		// dump trigger channel
+	stopChan	chan bool		// Stops the spin
 )
 
 var path = os.Getenv("HOME") + "/farmstate.json"
@@ -37,13 +40,26 @@ func spin(n int, during, after string) {
 	for busy {
 		time.Sleep(15 * time.Millisecond)
 	}
+	
+	end := time.Now().Add(time.Duration(n) * time.Minute)
 
 	// Might be bad
 	busy = true
 	
 	reqChan <- during
 	
-	time.Sleep(time.Duration(n) * time.Minute)
+	for run := true; run; {
+		if(time.Now().After(end)) {
+			break
+		}
+		
+		select {
+		case <- stopChan:
+			run = false
+		default:
+			time.Sleep(5 * time.Millisecond)
+		}
+	}
 
 	reqChan <- after
 	
@@ -206,7 +222,7 @@ func handler(conn net.Conn) {
 	}
 }
 
-// Simulates a silo, listens on tcp/1337
+// Simulates a smart device, listens on tcp/1337
 func main() {
 	flag.StringVar(&port, "p", ":1337", "Port to listen on")
 	flag.Uint64Var(&width, "w", 1024, "Max width of communications")
@@ -223,6 +239,7 @@ func main() {
 	status = "idle"
 	reqChan = make(chan string)
 	statChan = make(chan string)
+	stopChan = make(chan bool)
 	go statuser()
 	
 	// Load config file
