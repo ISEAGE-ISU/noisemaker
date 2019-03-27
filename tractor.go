@@ -104,7 +104,8 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 			continue
 		}
 		
-		if argv[0] == "power" || argv[0] == "fuel" || argv[0] == "oil" {
+		white := []string{"power", "fuel", "oil", "harvest"}
+		if in(white, argv[0]) {
 			goto cmd
 		}
 
@@ -245,7 +246,7 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 		case "harvest":
 			switch len(argv) {
 				case 1:
-					msgChan <- stat()
+					invalid()
 				case 2:
 					if argv[1] == "start" && !busy && t.tires >= 80 && t.fuel >= 25 {
 						ok()
@@ -256,9 +257,11 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 					} else if argv[1] == "stop" && stat() == "harvesting" {
 						stopChan <- true
 						ok()
+					} else {
+						invalid()
 					}
 				default:
-					invalid()
+					msgChan <- "err: invalid state to perform operation"
 				}
 
 		// Contents
