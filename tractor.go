@@ -314,15 +314,24 @@ func (t *Tractor) DoCmd(msgChan chan string) {
 				}
 
 				if argv[1] == "load" {
-					// TODO ­ more max/min logic
-					t.supply += n
-					ok()
-					go spin(2, "loading", "idle")
+					if t.supply + n > 1000 {
+						msgChan <- "err: Supply would go overfull!"
+						break
+					} else {
+						t.supply += n
+						ok()
+						go spin(2, "loading", "idle")
+					}
 				} else {
 					// lower
-					t.supply -= n
-					ok()
-					go spin(2, "unloading", "idle")
+					if t.supply - n < 0 {
+						msgChan <- "err: Supply may not go negative!"
+						break
+					} else {
+						t.supply -= n
+						ok()
+						go spin(2, "unloading", "idle")
+					}
 				}
 				
 				dumpChan <- t.Cfg()
